@@ -13,7 +13,7 @@ import com.lokmane.spring.security.postgresql.repository.UserRepository;
 @Service
 public class UserDetailsServiceImpl implements UserDetailsService {
   @Autowired
-  UserRepository userRepository;
+  private UserRepository userRepository;
 
   @Override
   @Transactional
@@ -23,5 +23,12 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
     return UserDetailsImpl.build(user);
   }
+      // Additional method to load user by email
+    @Transactional
+    public UserDetails loadUserByEmail(String email) throws UsernameNotFoundException {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User Not Found with email: " + email));
 
+        return UserDetailsImpl.build(user);
+    }
 }

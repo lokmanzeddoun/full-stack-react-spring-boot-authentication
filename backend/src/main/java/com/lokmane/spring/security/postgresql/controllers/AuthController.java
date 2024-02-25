@@ -13,7 +13,9 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -31,10 +33,12 @@ import com.lokmane.spring.security.postgresql.repository.RoleRepository;
 import com.lokmane.spring.security.postgresql.repository.UserRepository;
 import com.lokmane.spring.security.postgresql.security.jwt.JwtUtils;
 import com.lokmane.spring.security.postgresql.security.services.UserDetailsImpl;
+import com.lokmane.spring.security.postgresql.security.services.UserDetailsServiceImpl;
 
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
 @RequestMapping("/api/auth")
+@Validated()
 public class AuthController {
   @Autowired
   AuthenticationManager authenticationManager;
@@ -53,19 +57,28 @@ public class AuthController {
 
   @PostMapping("/signin")
   public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
+    // String loginParameter = loginRequest.getUsernameOrEmail();
+    // UserDetailsServiceImpl userDetailsServiceImpl = new UserDetailsServiceImpl();
+    // UserDetails userDetails;
 
+    // if (loginParameter.contains("@")) { // Assuming an email has @ symbol
+    //     userDetails = userDetailsServiceImpl.loadUserByEmail(loginParameter);
+    // } else {
+    //     userDetails = userDetailsServiceImpl.loadUserByUsername(loginParameter);
+    // }
+    // System.out.println("Hello"+userDetails);
     Authentication authentication = authenticationManager
         .authenticate(new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
 
     SecurityContextHolder.getContext().setAuthentication(authentication);
     String jwt = jwtUtils.generateJwtToken(authentication);
 
-    UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-    List<String> roles = userDetails.getAuthorities().stream().map(item -> item.getAuthority())
+    UserDetailsImpl userDetailsImpl = (UserDetailsImpl) authentication.getPrincipal();
+    List<String> roles = userDetailsImpl.getAuthorities().stream().map(item -> item.getAuthority())
         .collect(Collectors.toList());
 
     return ResponseEntity
-        .ok(new JwtResponse(jwt, userDetails.getId(), userDetails.getUsername(), userDetails.getEmail(), roles));
+        .ok(new JwtResponse(jwt, userDetailsImpl.getId(), userDetailsImpl.getUsername(), userDetailsImpl.getEmail(), roles));
   }
 
   @PostMapping("/signup")
